@@ -44,55 +44,95 @@ typedef struct {
 static Spline spline = {0};
 static int dragging = -1;
 
-void render_spline_into_grid(void)
+typedef struct {
+    float tx;
+    float d;
+} Solution;
+
+typedef struct {
+    Solution *items;
+    size_t count;
+    size_t capacity;
+} Solutions;
+
+int compare_solutions_by_tx(const void *a, const void *b)
 {
-    for (size_t row = 0; row < grid_height; ++row) {
-        int winding = 0;
-        for (size_t col = 0; col < grid_width; ++col) {
-            float x = (col + 0.5)*cell_width;
-            float y = (row + 0.5)*cell_height;
-            for (size_t i = 0; i + 2 <= spline.count; i += 2) {
-                Vector2 p1 = spline.items[i];
-                Vector2 p2 = spline.items[i+1];
-                Vector2 p3 = spline.items[(i+2)%spline.count];
+    const Solution *sa = a;
+    const Solution *sb = b;
+    if (sa->tx < sb->tx) return -1;
+    if (sa->tx > sb->tx) return 1;
+    return 0;
+}
 
-                float dx12 = p2.x - p1.x;
-                float dx23 = p3.x - p2.x;
-                float dy12 = p2.y - p1.y;
-                float dy23 = p3.y - p2.y;
+void solve_row(size_t row, Solutions *solutions)
+{
+    solutions->count = 0;
+    float y = (row + 0.5)*cell_height;
+    for (size_t i = 0; i + 2 <= spline.count; i += 2) {
+        Vector2 p1 = spline.items[i];
+        Vector2 p2 = spline.items[i+1];
+        Vector2 p3 = spline.items[(i+2)%spline.count];
 
-                float a = dy23 - dy12;
-                float b = 2*dy12;
-                float c = p1.y - y;
-                float D = b*b - 4*a*c;
+        float dx12 = p2.x - p1.x;
+        float dx23 = p3.x - p2.x;
+        float dy12 = p2.y - p1.y;
+        float dy23 = p3.y - p2.y;
 
-                if (D < 0.0) continue;
+        float a = dy23 - dy12;
+        float b = 2*dy12;
+        float c = p1.y - y;
 
-                float t[2];
-                size_t tn = 0;
+        float t[2];
+        size_t tn = 0;
+
+        if (fabsf(a) > 1e-6) {
+            float D = b*b - 4*a*c;
+            if (D >= 0.0) {
                 t[tn++] = (-b + sqrtf(D))/(2*a);
                 t[tn++] = (-b - sqrtf(D))/(2*a);
-                for (size_t j = 0; j < tn; ++j) {
-                    if (!(0 <= t[j] && t[j] <= 1)) continue;
-                    float tx = (dx23 - dx12)*t[j]*t[j] + 2*dx12*t[j] + p1.x;
-                    if (col*cell_width <= tx && tx <= (col + 1)*cell_width) {
-                        float d = (dy23 - dy12)*t[j] + dy12;
-                        if (d < 0) {
-                            winding += 1;
-                        } else if (d > 0) {
-                            winding -= 1;
-                        }
+            }
+        } else if (fabsf(b) > 1e-6) {
+            t[tn++] = -c/b;
+        }
+
+        for (size_t j = 0; j < tn; ++j) {
+            if (!(0 <= t[j] && t[j] <= 1)) continue;
+            float tx = (dx23 - dx12)*t[j]*t[j] + 2*dx12*t[j] + p1.x;
+            float d = (dy23 - dy12)*t[j] + dy12;
+            Solution s = {tx, d};
+            da_append(solutions, s);
+        }
+    }
+    qsort(solutions->items, solutions->count, sizeof(*solutions->items), compare_solutions_by_tx);
+}
+
+void render_spline_into_grid(void)
+{
+    static Solutions solutions = {0};
+    for (size_t row = 0; row < grid_height; ++row) {
+        for (size_t col = 0; col < grid_width; ++col) {
+            grid[row][col] = false;
+        }
+    }
+    for (size_t row = 0; row < grid_height; ++row) {
+        int winding = 0;
+        solve_row(row, &solutions);
+        for (size_t i = 0; i < solutions.count; ++i) {
+            Solution s = solutions.items[i];
+            if (winding > 0) {
+                if (i > 0) {
+                    Solution p = solutions.items[i-1];
+                    size_t col1 = p.tx/cell_width;
+                    size_t col2 = s.tx/cell_width;
+                    for (size_t col = col1; col <= col2; ++col) {
+                        grid[row][col] = true;
                     }
                 }
-
-                // float x = (dx23 - dx12)*t*t + 2*dx12*t + p1.x;
-                // float y = (dy23 - dy12)*t*t + 2*dy12*t + p1.y;
-                // a*t*t + b*t + c - y = 0;
             }
-            if (winding > 0) {
-                grid[row][col] = true;
-            } else {
-                grid[row][col] = false;
+            if (s.d < 0) {
+                winding += 1;
+            } else if (s.d > 0) {
+                winding -= 1;
             }
         }
     }
