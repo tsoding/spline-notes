@@ -11,3 +11,9 @@ $ cc -o nob nob.c
 $ ./nob
 $ ./spline
 ```
+
+## Blacboard
+
+Blackboard from the session:
+
+![blackboard](./blackboard.png)
