@@ -119,7 +119,7 @@ void render_spline_into_grid(void)
         solve_row(row, &solutions);
         for (size_t i = 0; i < solutions.count; ++i) {
             Solution s = solutions.items[i];
-            if (winding > 0) {
+            if (winding != 0) {
                 if (i > 0) {
                     Solution p = solutions.items[i-1];
                     size_t col1 = p.tx/cell_width;
