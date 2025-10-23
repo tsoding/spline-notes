@@ -12,7 +12,7 @@ $ ./nob
 $ ./spline
 ```
 
-## Blacboard
+## Blackboard
 
 Blackboard from the session:
 
