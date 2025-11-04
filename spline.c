@@ -10,6 +10,9 @@
 
 int main()
 {
+    Spline spline = {0};
+    int dragging = -1;
+
     InitWindow(window_width, window_height, "Splines");
     SetTargetFPS(60);
     while (!WindowShouldClose()) {
@@ -23,7 +26,7 @@ int main()
                 }
             }
         }
-        edit_control_points();
+        edit_control_points(&spline, &dragging);
         display_grid();
         EndDrawing();
     }

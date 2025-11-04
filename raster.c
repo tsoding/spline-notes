@@ -33,9 +33,6 @@ typedef struct {
     size_t capacity;
 } Spline;
 
-static Spline spline = {0};
-static int dragging = -1;
-
 typedef struct {
     float tx;
     float d;
@@ -46,7 +43,6 @@ typedef struct {
     size_t count;
     size_t capacity;
 } Solutions;
-
 
 int compare_solutions_by_tx(const void *a, const void *b)
 {
@@ -105,30 +101,30 @@ void solve_y_line(float y, Vector2 p1, Vector2 p2, Solutions *solutions)
     }
 }
 
-void solve_row(size_t row, Solutions *solutions)
+void solve_row(const Spline *spline, size_t row, Solutions *solutions)
 {
-    if (spline.count <= 2) return;
+    if (spline->count <= 2) return;
 
     solutions->count = 0;
     float y = (row + 0.5)*cell_height;
     size_t i = 0;
-    for (; i + 2 <= spline.count; i += 2) {
-        Vector2 p1 = spline.items[i];
-        Vector2 p2 = spline.items[i+1];
-        Vector2 p3 = spline.items[(i+2)%spline.count];
+    for (; i + 2 <= spline->count; i += 2) {
+        Vector2 p1 = spline->items[i];
+        Vector2 p2 = spline->items[i+1];
+        Vector2 p3 = spline->items[(i+2)%spline->count];
         solve_y_cubic(y, p1, p2, p3, solutions);
     }
 
-    if (spline.count%2 == 1) {
-        Vector2 p1 = spline.items[spline.count-1];
-        Vector2 p2 = spline.items[0];
+    if (spline->count%2 == 1) {
+        Vector2 p1 = spline->items[spline->count-1];
+        Vector2 p2 = spline->items[0];
         solve_y_line(y, p1, p2, solutions);
     }
 
     qsort(solutions->items, solutions->count, sizeof(*solutions->items), compare_solutions_by_tx);
 }
 
-void render_spline_into_grid(void)
+void render_spline_into_grid(const Spline *spline)
 {
     static Solutions solutions = {0};
     for (size_t row = 0; row < grid_height; ++row) {
@@ -138,7 +134,7 @@ void render_spline_into_grid(void)
     }
     for (size_t row = 0; row < grid_height; ++row) {
         int winding = 0;
-        solve_row(row, &solutions);
+        solve_row(spline, row, &solutions);
         for (size_t i = 0; i < solutions.count; ++i) {
             Solution s = solutions.items[i];
             if (winding > 0) {
@@ -160,33 +156,33 @@ void render_spline_into_grid(void)
     }
 }
 
-void edit_control_points(void)
+void edit_control_points(Spline *spline, int *dragging)
 {
     Vector2 mouse = GetMousePosition();
 
-    for (size_t i = 0; i < spline.count; ++i) {
+    for (size_t i = 0; i < spline->count; ++i) {
         Vector2 size = {20, 20};
-        Vector2 position = spline.items[i];
+        Vector2 position = spline->items[i];
         position = Vector2Subtract(position, Vector2Scale(size, 0.5));
 
         bool hover = CheckCollisionPointRec(mouse, (Rectangle) {position.x, position.y, size.x, size.y});
 
         if (hover) {
-            if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) dragging = i;
+            if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) *dragging = i;
         } else {
-            if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) dragging = -1;
+            if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) *dragging = -1;
         }
         DrawRectangleV(position, size, hover ? RED : BLUE);
     }
 
-    if (dragging >= 0) {
-        if (spline.items[dragging].x != mouse.x || spline.items[dragging].y != mouse.y) {
-            render_spline_into_grid();
+    if (*dragging >= 0) {
+        if (spline->items[*dragging].x != mouse.x || spline->items[*dragging].y != mouse.y) {
+            render_spline_into_grid(spline);
         }
-        spline.items[dragging] = mouse;
+        spline->items[*dragging] = mouse;
     } else {
         if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-            da_append(&spline, mouse);
+            da_append(spline, mouse);
         }
     }
 }

@@ -54,10 +54,11 @@ int main()
     int factor = 100;
     int pindex = 0;
     assert(face->glyph->outline.n_contours == 1);
+    Spline spline = {0};
     for (int i = 0; i < face->glyph->outline.n_contours; ++i) {
         for (; pindex <= face->glyph->outline.contours[i]; pindex++) {
             FT_Vector p = face->glyph->outline.points[pindex];
-            unsigned char t = face->glyph->outline.tags[pindex];
+            // unsigned char t = face->glyph->outline.tags[pindex];
             float scale = 0.5;
             float x = (p.x - min_x)*scale + 100;
             float y = (max_y - p.y)*scale + 100;
@@ -68,7 +69,7 @@ int main()
         }
     }
 
-    render_spline_into_grid();
+    render_spline_into_grid(&spline);
 
     InitWindow(16*factor, 9*factor, "main");
     SetTargetFPS(60);
