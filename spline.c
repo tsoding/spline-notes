@@ -10,8 +10,10 @@
 
 int main()
 {
+    Control_Points control_points = {
+        .dragging = -1,
+    };
     Spline spline = {0};
-    int dragging = -1;
 
     InitWindow(window_width, window_height, "Splines");
     SetTargetFPS(60);
@@ -19,14 +21,14 @@ int main()
         BeginDrawing();
         ClearBackground(GetColor(0x181818FF));
         if (IsKeyPressed(KEY_F2)) {
-            spline.count = 0;
+            control_points.count = 0;
             for (size_t y = 0; y < grid_height; ++y) {
                 for (size_t x = 0; x < grid_width; ++x) {
                     grid[y][x] = false;
                 }
             }
         }
-        edit_control_points(&spline, &dragging);
+        edit_control_points(&control_points, &spline);
         display_grid();
         EndDrawing();
     }

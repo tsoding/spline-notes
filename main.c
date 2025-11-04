@@ -55,6 +55,7 @@ int main()
     int pindex = 0;
     assert(face->glyph->outline.n_contours == 1);
     Spline spline = {0};
+    /*
     for (int i = 0; i < face->glyph->outline.n_contours; ++i) {
         for (; pindex <= face->glyph->outline.contours[i]; pindex++) {
             FT_Vector p = face->glyph->outline.points[pindex];
@@ -68,6 +69,7 @@ int main()
             // DrawCircle(x, y, 8, t ? GREEN : RED);
         }
     }
+    */
 
     render_spline_into_grid(&spline);
 

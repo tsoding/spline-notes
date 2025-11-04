@@ -27,8 +27,18 @@ void display_grid(void)
     }
 }
 
+typedef enum {
+    SEGMENT_LINE,
+    SEGMENT_QUAD,
+} Segment_Kind;
+
 typedef struct {
-    Vector2 *items;
+    Segment_Kind kind;
+    Vector2 p1, p2, p3;
+} Segment;
+
+typedef struct {
+    Segment *items;
     size_t count;
     size_t capacity;
 } Spline;
@@ -53,7 +63,7 @@ int compare_solutions_by_tx(const void *a, const void *b)
     return 0;
 }
 
-void solve_y_cubic(float y, Vector2 p1, Vector2 p2, Vector2 p3, Solutions *solutions)
+void solve_y_quad(float y, Vector2 p1, Vector2 p2, Vector2 p3, Solutions *solutions)
 {
     float dx12 = p2.x - p1.x;
     float dx23 = p3.x - p2.x;
@@ -103,23 +113,18 @@ void solve_y_line(float y, Vector2 p1, Vector2 p2, Solutions *solutions)
 
 void solve_row(const Spline *spline, size_t row, Solutions *solutions)
 {
-    if (spline->count <= 2) return;
-
     solutions->count = 0;
     float y = (row + 0.5)*cell_height;
-    size_t i = 0;
-    for (; i + 2 <= spline->count; i += 2) {
-        Vector2 p1 = spline->items[i];
-        Vector2 p2 = spline->items[i+1];
-        Vector2 p3 = spline->items[(i+2)%spline->count];
-        solve_y_cubic(y, p1, p2, p3, solutions);
+
+    for (size_t i = 0; i < spline->count; ++i) {
+        Segment seg = spline->items[i];
+        switch (seg.kind) {
+        case SEGMENT_LINE: solve_y_line(y, seg.p1, seg.p2, solutions);         break;
+        case SEGMENT_QUAD: solve_y_quad(y, seg.p1, seg.p2, seg.p3, solutions); break;
+        default: UNREACHABLE("Segment_Kind");
+        }
     }
 
-    if (spline->count%2 == 1) {
-        Vector2 p1 = spline->items[spline->count-1];
-        Vector2 p2 = spline->items[0];
-        solve_y_line(y, p1, p2, solutions);
-    }
 
     qsort(solutions->items, solutions->count, sizeof(*solutions->items), compare_solutions_by_tx);
 }
@@ -140,9 +145,13 @@ void render_spline_into_grid(const Spline *spline)
             if (winding > 0) {
                 if (i > 0) {
                     Solution p = solutions.items[i-1];
-                    size_t col1 = p.tx/cell_width;
-                    size_t col2 = s.tx/cell_width;
-                    for (size_t col = col1; col <= col2; ++col) {
+                    int col1 = p.tx/cell_width;
+                    if (col1 < 0) col1 = 0;
+                    if (col1 >= grid_width) col1 = grid_width - 1;
+                    int col2 = s.tx/cell_width;
+                    if (col2 < 0) col2 = 0;
+                    if (col2 >= grid_width) col2 = grid_width - 1;
+                    for (int col = col1; col <= col2; ++col) {
                         grid[row][col] = true;
                     }
                 }
@@ -156,33 +165,76 @@ void render_spline_into_grid(const Spline *spline)
     }
 }
 
-void edit_control_points(Spline *spline, int *dragging)
+typedef struct {
+    Vector2 *items;
+    size_t count;
+    size_t capacity;
+    int dragging;
+} Control_Points;
+
+
+void control_points_to_spline(const Control_Points *control_points, Spline *spline)
+{
+    spline->count = 0;
+
+    if (control_points->count <= 2) return;
+
+    for (size_t i = 0; i + 2 <= control_points->count; i += 2) {
+        Vector2 p1 = control_points->items[i];
+        Vector2 p2 = control_points->items[i+1];
+        Vector2 p3 = control_points->items[(i+2)%control_points->count];
+        Segment seg = {
+            .kind = SEGMENT_QUAD,
+            .p1 = p1,
+            .p2 = p2,
+            .p3 = p3,
+        };
+        da_append(spline, seg);
+    }
+
+    if (control_points->count%2 == 1) {
+        Vector2 p1 = control_points->items[control_points->count-1];
+        Vector2 p2 = control_points->items[0];
+        Segment seg = {
+            .kind = SEGMENT_LINE,
+            .p1 = p1,
+            .p2 = p2,
+        };
+        da_append(spline, seg);
+    }
+}
+
+void edit_control_points(Control_Points *control_points, Spline *spline)
 {
     Vector2 mouse = GetMousePosition();
 
-    for (size_t i = 0; i < spline->count; ++i) {
+    for (size_t i = 0; i < control_points->count; ++i) {
         Vector2 size = {20, 20};
-        Vector2 position = spline->items[i];
+        Vector2 position = control_points->items[i];
         position = Vector2Subtract(position, Vector2Scale(size, 0.5));
 
         bool hover = CheckCollisionPointRec(mouse, (Rectangle) {position.x, position.y, size.x, size.y});
 
         if (hover) {
-            if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) *dragging = i;
+            if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) control_points->dragging = i;
         } else {
-            if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) *dragging = -1;
+            if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) control_points->dragging = -1;
         }
         DrawRectangleV(position, size, hover ? RED : BLUE);
     }
 
-    if (*dragging >= 0) {
-        if (spline->items[*dragging].x != mouse.x || spline->items[*dragging].y != mouse.y) {
+    if (control_points->dragging >= 0) {
+        if (
+            control_points->items[control_points->dragging].x != mouse.x ||
+            control_points->items[control_points->dragging].y != mouse.y
+        ) {
+            control_points_to_spline(control_points, spline);
             render_spline_into_grid(spline);
         }
-        spline->items[*dragging] = mouse;
+        control_points->items[control_points->dragging] = mouse;
     } else {
         if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-            da_append(spline, mouse);
+            da_append(control_points, mouse);
         }
     }
 }
