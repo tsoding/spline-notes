@@ -57,45 +57,74 @@ int compare_solutions_by_tx(const void *a, const void *b)
     return 0;
 }
 
-void solve_row(size_t row, Solutions *solutions)
+void solve_y_cubic(float y, Vector2 p1, Vector2 p2, Vector2 p3, Solutions *solutions)
 {
-    solutions->count = 0;
-    float y = (row + 0.5)*cell_height;
-    for (size_t i = 0; i + 2 <= spline.count; i += 2) {
-        Vector2 p1 = spline.items[i];
-        Vector2 p2 = spline.items[i+1];
-        Vector2 p3 = spline.items[(i+2)%spline.count];
+    float dx12 = p2.x - p1.x;
+    float dx23 = p3.x - p2.x;
+    float dy12 = p2.y - p1.y;
+    float dy23 = p3.y - p2.y;
 
-        float dx12 = p2.x - p1.x;
-        float dx23 = p3.x - p2.x;
-        float dy12 = p2.y - p1.y;
-        float dy23 = p3.y - p2.y;
+    float a = dy23 - dy12;
+    float b = 2*dy12;
+    float c = p1.y - y;
 
-        float a = dy23 - dy12;
-        float b = 2*dy12;
-        float c = p1.y - y;
+    float t[2];
+    size_t tn = 0;
 
-        float t[2];
-        size_t tn = 0;
-
-        if (fabsf(a) > 1e-6) {
-            float D = b*b - 4*a*c;
-            if (D >= 0.0) {
-                t[tn++] = (-b + sqrtf(D))/(2*a);
-                t[tn++] = (-b - sqrtf(D))/(2*a);
-            }
-        } else if (fabsf(b) > 1e-6) {
-            t[tn++] = -c/b;
+    if (fabsf(a) > 1e-6) {
+        float D = b*b - 4*a*c;
+        if (D >= 0.0) {
+            t[tn++] = (-b + sqrtf(D))/(2*a);
+            t[tn++] = (-b - sqrtf(D))/(2*a);
         }
+    } else if (fabsf(b) > 1e-6) {
+        t[tn++] = -c/b;
+    }
 
-        for (size_t j = 0; j < tn; ++j) {
-            if (!(0 <= t[j] && t[j] <= 1)) continue;
-            float tx = (dx23 - dx12)*t[j]*t[j] + 2*dx12*t[j] + p1.x;
-            float d = (dy23 - dy12)*t[j] + dy12;
+    for (size_t j = 0; j < tn; ++j) {
+        if (!(0 <= t[j] && t[j] <= 1)) continue;
+        float tx = (dx23 - dx12)*t[j]*t[j] + 2*dx12*t[j] + p1.x;
+        float d = (dy23 - dy12)*t[j] + dy12;
+        Solution s = {tx, d};
+        da_append(solutions, s);
+    }
+}
+
+void solve_y_line(float y, Vector2 p1, Vector2 p2, Solutions *solutions)
+{
+    float dy = p2.y - p1.y;
+    if (fabsf(dy) > 1e-6) {
+        float t = (y - p1.y)/dy;
+        if (0 <= t && t <= 1) {
+            float dx = p2.x - p1.x;
+            float tx = dx*t + p1.x;
+            float d = dy;
             Solution s = {tx, d};
             da_append(solutions, s);
         }
     }
+}
+
+void solve_row(size_t row, Solutions *solutions)
+{
+    if (spline.count <= 2) return;
+
+    solutions->count = 0;
+    float y = (row + 0.5)*cell_height;
+    size_t i = 0;
+    for (; i + 2 <= spline.count; i += 2) {
+        Vector2 p1 = spline.items[i];
+        Vector2 p2 = spline.items[i+1];
+        Vector2 p3 = spline.items[(i+2)%spline.count];
+        solve_y_cubic(y, p1, p2, p3, solutions);
+    }
+
+    if (spline.count%2 == 1) {
+        Vector2 p1 = spline.items[spline.count-1];
+        Vector2 p2 = spline.items[0];
+        solve_y_line(y, p1, p2, solutions);
+    }
+
     qsort(solutions->items, solutions->count, sizeof(*solutions->items), compare_solutions_by_tx);
 }
 
