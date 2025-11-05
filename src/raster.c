@@ -4,7 +4,7 @@
 #define windows_factor 200
 #define window_width (width_factor*windows_factor)
 #define window_height (height_factor*windows_factor)
-#define grid_factor 20
+#define grid_factor 25
 #define grid_width (width_factor*grid_factor)
 #define grid_height (height_factor*grid_factor)
 #define cell_width (window_width/grid_width)
@@ -135,14 +135,18 @@ void solve_row(const Spline *spline, size_t row, Solutions *solutions)
     qsort(solutions->items, solutions->count, sizeof(*solutions->items), compare_solutions_by_tx);
 }
 
-void render_spline_into_grid(const Spline *spline)
-{
-    static Solutions solutions = {0};
-    for (size_t row = 0; row < grid_height; ++row) {
-        for (size_t col = 0; col < grid_width; ++col) {
+void clear_grid() {
+    for(size_t row = 0; row < grid_height; ++row) {
+        for(size_t col = 0; col < grid_width; ++col) {
             grid[row][col] = false;
         }
     }
+}
+
+void render_spline_into_grid(const Spline *spline)
+{
+    static Solutions solutions = {0};
+    clear_grid();
     for (size_t row = 0; row < grid_height; ++row) {
         int winding = 0;
         solve_row(spline, row, &solutions);
