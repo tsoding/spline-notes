@@ -1,3 +1,4 @@
+// The grid spline rasterizer which is reused by several applications in this repo.
 #define width_factor 4
 #define height_factor 3
 #define windows_factor 200
@@ -119,9 +120,14 @@ void solve_row(const Spline *spline, size_t row, Solutions *solutions)
     for (size_t i = 0; i < spline->count; ++i) {
         Segment seg = spline->items[i];
         switch (seg.kind) {
-        case SEGMENT_LINE: solve_y_line(y, seg.p1, seg.p2, solutions);         break;
-        case SEGMENT_QUAD: solve_y_quad(y, seg.p1, seg.p2, seg.p3, solutions); break;
-        default: UNREACHABLE("Segment_Kind");
+        case SEGMENT_LINE:
+            solve_y_line(y, seg.p1, seg.p2, solutions);
+            break;
+        case SEGMENT_QUAD:
+            solve_y_quad(y, seg.p1, seg.p2, seg.p3, solutions);
+            break;
+        default:
+            UNREACHABLE("Segment_Kind");
         }
     }
 
@@ -213,7 +219,9 @@ void edit_control_points(Control_Points *control_points, Spline *spline)
         Vector2 position = control_points->items[i];
         position = Vector2Subtract(position, Vector2Scale(size, 0.5));
 
-        bool hover = CheckCollisionPointRec(mouse, (Rectangle) {position.x, position.y, size.x, size.y});
+        bool hover = CheckCollisionPointRec(mouse, (Rectangle) {
+            position.x, position.y, size.x, size.y
+        });
 
         if (hover) {
             if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) control_points->dragging = i;

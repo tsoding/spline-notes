@@ -22,6 +22,7 @@ void raylib_libs(void)
 {
     cmd_append(&cmd, "-Lraylib-5.5_linux_amd64/lib/");
     cmd_append(&cmd, "-l:libraylib.a");
+    cmd_append(&cmd, "-lm");
 }
 
 void freetype2_cflags(void)
@@ -41,16 +42,14 @@ int main(int argc, char **argv)
     raylib_cflags();
     cmd_append(&cmd, "-o", "spline");
     cmd_append(&cmd, "spline.c");
-    cmd_append(&cmd, "-lm");
     raylib_libs();
     if (!cmd_run(&cmd, .async = &procs)) return 1;
 
     cc();
     raylib_cflags();
     freetype2_cflags();
-    cmd_append(&cmd, "-o", "main");
-    cmd_append(&cmd, "main.c");
-    cmd_append(&cmd, "-lm");
+    cmd_append(&cmd, "-o", "font");
+    cmd_append(&cmd, "font.c");
     raylib_libs();
     freetype2_libs();
     if (!cmd_run(&cmd, .async = &procs)) return 1;

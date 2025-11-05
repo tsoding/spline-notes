@@ -42,9 +42,9 @@ int main()
 
     // char c = '#';
     // char c = 'x';
-    // char c = 'Q';
+    char c = 'Q';
     // char c = '?';
-    char c = 'O';
+    // char c = 'O';
     error = FT_Load_Char(face, c, FT_LOAD_DEFAULT);
     // error = FT_Load_Glyph(face, 'Q', FT_LOAD_DEFAULT);
     if (error) {
