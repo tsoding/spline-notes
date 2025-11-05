@@ -3,6 +3,7 @@
 #include "nob.h"
 
 #define BUILD_DIR "build/"
+#define SRC_DIR "src/"
 
 Procs procs = {0};
 Cmd cmd = {0};
@@ -13,6 +14,7 @@ void cc(void)
     cmd_append(&cmd, "-Wall");
     cmd_append(&cmd, "-Wextra");
     cmd_append(&cmd, "-ggdb");
+    cmd_append(&cmd, "-I.");
 }
 
 void raylib_cflags(void)
@@ -46,7 +48,7 @@ int main(int argc, char **argv)
     cc();
     raylib_cflags();
     cmd_append(&cmd, "-o", BUILD_DIR"spline");
-    cmd_append(&cmd, "spline.c");
+    cmd_append(&cmd, SRC_DIR"spline.c");
     raylib_libs();
     if (!cmd_run(&cmd, .async = &procs)) return 1;
 
@@ -54,7 +56,7 @@ int main(int argc, char **argv)
     raylib_cflags();
     freetype2_cflags();
     cmd_append(&cmd, "-o", BUILD_DIR"font");
-    cmd_append(&cmd, "font.c");
+    cmd_append(&cmd, SRC_DIR"font.c");
     raylib_libs();
     freetype2_libs();
     if (!cmd_run(&cmd, .async = &procs)) return 1;
