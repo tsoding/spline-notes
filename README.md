@@ -19,9 +19,3 @@ $ ./nob
 $ ./build/spline
 $ ./build/font
 ```
-
-## Blackboard
-
-Blackboard from the session:
-
-![blackboard](./assets/blackboard.png)
