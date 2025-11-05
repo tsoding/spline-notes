@@ -2,7 +2,7 @@
 
 The notes from the Rasterizing Splines stream:
 
-[![thumbnail](./thumbnail.png)](https://www.youtube.com/watch?v=1epwf3iaQNU)
+[![thumbnail](./assets/thumbnail.png)](https://www.youtube.com/watch?v=1epwf3iaQNU)
 
 ## Thirdparty Dependencies
 
@@ -23,4 +23,4 @@ $ ./build/font
 
 Blackboard from the session:
 
-![blackboard](./blackboard.png)
+![blackboard](./assets/blackboard.png)

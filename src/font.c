@@ -29,7 +29,7 @@ int main()
         return 1;
     }
 
-    const char *const font_file_path = "./Vollkorn-Regular.ttf";
+    const char *const font_file_path = "./assets/Vollkorn-Regular.ttf";
 
     FT_Face face;
     error = FT_New_Face(library, font_file_path, 0, &face);
