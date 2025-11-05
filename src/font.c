@@ -8,6 +8,8 @@
 
 #include "raster.c"
 
+#define MOD(x, size) ((x) % (size) + (size)) % (size)
+
 typedef struct {
     Vector2 position;
     bool on;
@@ -92,61 +94,44 @@ int main()
     Spline spline = {0};
     for (int i = 0; i < face->glyph->outline.n_contours; ++i) {
         Point *contour      = &points.items[contour_start];
-        size_t contour_size = face->glyph->outline.contours[i] - contour_start + 1;
+        int contour_size = face->glyph->outline.contours[i] - contour_start + 1;
         assert(contour_size > 2);
+
+        bool is_p_set = false;
         Vector2 p = {0};
-        size_t j = 0;
-        bool hack = false;
-        if (contour[0].on) {
-            p = contour[0].position;
-            j = 1;
-            hack = true;
-        } else if (contour[contour_size - 1].on) {
-            p = contour[contour_size - 1].position;
-            j = 0;
-        } else {
-            p = Vector2Lerp(contour[0].position, contour[contour_size - 1].position, 0.5);
-            j = 0;
-        }
-        printf("------------------------------\n");
-        printf("j = %zu\n", j);
-        printf("------------------------------\n");
-        while ((hack && j <= contour_size) || j < contour_size) {
-            if (contour[j%contour_size].on) {
-                Segment seg = {
-                    .kind = SEGMENT_LINE,
-                    .p1 = p,
-                    .p2 = contour[j%contour_size].position,
-                };
-                da_append(&spline, seg);
-                p = contour[j%contour_size].position;
+
+        for (int j = 0; j <= contour_size; ++j) {
+            Point cp1 = contour[MOD(j - 1, contour_size)];
+            Point cp2 = contour[j%contour_size];
+
+            Vector2 c; 
+            Vector2 n;
+            if (cp1.on) {
+                Vector2 v = Vector2Lerp(p, cp1.position, 0.5);
+                c = v;
+                n = cp1.position;
+            } else if (cp2.on) {
+                c = cp1.position;
+                n = cp2.position;
                 j += 1;
-            } else if (contour[(j+1)%contour_size].on) {
-                Segment seg = {
-                    .kind = SEGMENT_QUAD,
-                    .p1 = p,
-                    .p2 = contour[j%contour_size].position,
-                    .p3 = contour[(j+1)%contour_size].position,
-                };
-                da_append(&spline, seg);
-                p = contour[(j+1)%contour_size].position;
-                j += 2;
             } else {
-                Vector2 v = Vector2Lerp(
-                    contour[j%contour_size].position,
-                    contour[(j+1)%contour_size].position,
-                    0.5
-                );
+                Vector2 v = Vector2Lerp(cp1.position, cp2.position, 0.5);
+                c = cp1.position;
+                n = v;
+            }
+
+            if (is_p_set) {
                 Segment seg = {
                     .kind = SEGMENT_QUAD,
                     .p1 = p,
-                    .p2 = contour[j%contour_size].position,
-                    .p3 = v,
+                    .p2 = c,
+                    .p3 = n,
                 };
                 da_append(&spline, seg);
-                p = v;
-                j += 1;
             }
+
+            p = n;
+            is_p_set = true;
         }
         contour_start = face->glyph->outline.contours[i] + 1;
     }
