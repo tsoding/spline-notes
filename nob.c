@@ -2,6 +2,8 @@
 #define NOB_STRIP_PREFIX
 #include "nob.h"
 
+#define BUILD_DIR "build/"
+
 Procs procs = {0};
 Cmd cmd = {0};
 
@@ -38,9 +40,12 @@ void freetype2_libs(void)
 int main(int argc, char **argv)
 {
     NOB_GO_REBUILD_URSELF(argc, argv);
+
+    if (!mkdir_if_not_exists(BUILD_DIR)) return 1;
+
     cc();
     raylib_cflags();
-    cmd_append(&cmd, "-o", "spline");
+    cmd_append(&cmd, "-o", BUILD_DIR"spline");
     cmd_append(&cmd, "spline.c");
     raylib_libs();
     if (!cmd_run(&cmd, .async = &procs)) return 1;
@@ -48,7 +53,7 @@ int main(int argc, char **argv)
     cc();
     raylib_cflags();
     freetype2_cflags();
-    cmd_append(&cmd, "-o", "font");
+    cmd_append(&cmd, "-o", BUILD_DIR"font");
     cmd_append(&cmd, "font.c");
     raylib_libs();
     freetype2_libs();
