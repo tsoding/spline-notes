@@ -96,14 +96,12 @@ int main()
         assert(contour_size > 2);
         Vector2 p = {0};
         size_t j = 0;
-        bool hack = false;
-        if (contour[0].on) {
-            p = contour[0].position;
-            j = 1;
-            hack = true;
-        } else if (contour[contour_size - 1].on) {
+        if (contour[contour_size - 1].on) {
             p = contour[contour_size - 1].position;
             j = 0;
+        } else if (contour[0].on) {
+            p = contour[0].position;
+            j += 1;
         } else {
             p = Vector2Lerp(contour[0].position, contour[contour_size - 1].position, 0.5);
             j = 0;
@@ -111,7 +109,7 @@ int main()
         printf("------------------------------\n");
         printf("j = %zu\n", j);
         printf("------------------------------\n");
-        while ((hack && j <= contour_size) || j < contour_size) {
+        while (j < contour_size) {
             if (contour[j%contour_size].on) {
                 Segment seg = {
                     .kind = SEGMENT_LINE,
