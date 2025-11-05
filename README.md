@@ -1,8 +1,9 @@
 # Rasterizing Splines
 
-The notes from the Rasterizing Splines stream:
+The notes from the Rasterizing Splines streams:
 
-[![thumbnail](./assets/thumbnail.png)](https://www.youtube.com/watch?v=1epwf3iaQNU)
+[![thumbnail-ep1](./assets/thumbnail-ep1.png)](https://www.youtube.com/watch?v=1epwf3iaQNU)
+[![thumbnail-ep2](./assets/thumbnail-ep2.png)](https://www.youtube.com/watch?v=qBErwx9Lpx4)
 
 ## Thirdparty Dependencies
 
