@@ -1,3 +1,4 @@
+// Spline editor using the buggy rasterizer in raster.c
 #include <stdio.h>
 #include <stdbool.h>
 #include <raylib.h>

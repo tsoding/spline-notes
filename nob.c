@@ -4,6 +4,7 @@
 
 #define BUILD_DIR "build/"
 #define SRC_DIR "src/"
+#define THIRDPARTY_DIR "thirdparty/"
 
 Procs procs = {0};
 Cmd cmd = {0};
@@ -19,12 +20,12 @@ void cc(void)
 
 void raylib_cflags(void)
 {
-    cmd_append(&cmd, "-Iraylib-5.5_linux_amd64/include/");
+    cmd_append(&cmd, "-I"THIRDPARTY_DIR"raylib-5.5_linux_amd64/include/");
 }
 
 void raylib_libs(void)
 {
-    cmd_append(&cmd, "-Lraylib-5.5_linux_amd64/lib/");
+    cmd_append(&cmd, "-L"THIRDPARTY_DIR"raylib-5.5_linux_amd64/lib/");
     cmd_append(&cmd, "-l:libraylib.a");
     cmd_append(&cmd, "-lm");
 }

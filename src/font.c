@@ -1,3 +1,4 @@
+// TTF font renderer using the buggy rasterizer in raster.c
 #include <ft2build.h>
 #include FT_FREETYPE_H
 #include <raylib.h>
